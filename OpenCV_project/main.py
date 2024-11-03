@@ -6,6 +6,12 @@ from qt_material import apply_stylesheet
 import matplotlib.pyplot as plt
 import numpy as np
 import warnings
+from ColorSeperation import ColorSeperation
+from ColorTransformation import ColorTransformation
+from ColorExtraction import ColorExtraction
+from GaussianBlur import GaussianBlur
+from BilateralFilter import BilateralFilter
+from MedianFilter import MedianFilter
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -15,6 +21,8 @@ class UI_MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("OpenCV with PyQt5")
         self.setGeometry(100, 100, 800, 600)
         self.initUI()
+        self.img1 = None
+        self.img2 = None
 
     def initUI(self):
 
@@ -218,33 +226,41 @@ class UI_MainWindow(QtWidgets.QMainWindow):
     def loadImage1(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
         if fileName:
-            img1 = cv2.imread(fileName)
+            self.img1 = cv2.imread(fileName)
             print(f"Image1: {fileName} loaded successfully")
 
 
     def loadImage2(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
         if fileName:
-            img2 = cv2.imread(fileName)
+            self.img2 = cv2.imread(fileName)
             print(f"Image2: {fileName} loaded successfully")
 
     def ColorSeparation(self):
-        pass
+        if self.img1 is not None:
+            ColorSeperation(self.img1)
+
     
     def ColorTransformation(self):
-        pass
+        if self.img1 is not None:
+            ColorTransformation(self.img1)
 
     def ColorExtraction(self):
-        pass
+        if self.img1 is not None:
+            ColorExtraction(self.img1)
+            
 
     def GaussianBlur(self):
-        pass
+        if self.img1 is not None:
+            GaussianBlur(self.img1)
 
     def BilateralFilter(self):
-        pass
+        if self.img1 is not None:
+            BilateralFilter(self.img1)
 
     def MedianFilter(self):
-        pass
+        if self.img2 is not None:
+            MedianFilter(self.img2)
 
     def SobelX(self):
         pass
