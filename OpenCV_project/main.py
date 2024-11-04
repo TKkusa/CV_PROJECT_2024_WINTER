@@ -12,6 +12,10 @@ from ColorExtraction import ColorExtraction
 from GaussianBlur import GaussianBlur
 from BilateralFilter import BilateralFilter
 from MedianFilter import MedianFilter
+from SobelX import SobelX
+from SobelY import SobelY
+from CombinationThreshold import CombinationThreshold
+from GradientAngle import GradientAngle
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -131,28 +135,28 @@ class UI_MainWindow(QtWidgets.QMainWindow):
         self.text_rotation.setGeometry(1140, 100, 100, 30)
         self.text_rotation.setReadOnly(False)
         self.text_rotation.setEnabled(True)
-        self.text_rotation.setStyleSheet("border: 2px solid cyan; font-size: 18px;")
+        self.text_rotation.setStyleSheet("border: 2px solid cyan; font-size: 18px; color: cyan;")
 
         # line edit to input scaling factor
         self.text_scaling = QtWidgets.QLineEdit(self)
         self.text_scaling.setGeometry(1140, 200, 100, 30)
         self.text_scaling.setReadOnly(False)
         self.text_scaling.setEnabled(True)
-        self.text_scaling.setStyleSheet("border: 2px solid cyan; font-size: 18px;")
+        self.text_scaling.setStyleSheet("border: 2px solid cyan; font-size: 18px; color: cyan;")
 
         # line edit to input Tx
         self.text_tx = QtWidgets.QLineEdit(self)
         self.text_tx.setGeometry(1140, 300, 100, 30)
         self.text_tx.setReadOnly(False)
         self.text_tx.setEnabled(True)
-        self.text_tx.setStyleSheet("border: 2px solid cyan; font-size: 18px;")
+        self.text_tx.setStyleSheet("border: 2px solid cyan; font-size: 18px; color: cyan;")
         
         # line edit to input Ty
         self.text_ty = QtWidgets.QLineEdit(self)
         self.text_ty.setGeometry(1140, 400, 100, 30)
         self.text_ty.setReadOnly(False)
         self.text_ty.setEnabled(True)
-        self.text_ty.setStyleSheet("border: 2px solid cyan; font-size: 18px;")
+        self.text_ty.setStyleSheet("border: 2px solid cyan; font-size: 18px; color: cyan;")
 
         # button to perform Transforms
         self.btn_transform = QtWidgets.QPushButton("Transforms", self)
@@ -263,19 +267,54 @@ class UI_MainWindow(QtWidgets.QMainWindow):
             MedianFilter(self.img2)
 
     def SobelX(self):
-        pass
+        if self.img1 is not None:
+            SobelX(self.img1)
 
     def SobelY(self):
-        pass
+        if self.img1 is not None:
+            SobelY(self.img1)
 
     def CombinationThreshold(self):
-        pass
+        if self.img1 is not None:
+            CombinationThreshold(self.img1)
 
     def GradientAngle(self):
-        pass
+        if self.img1 is not None:
+            GradientAngle(self.img1)
 
     def Transforms(self):
-        pass
+        if self.img1 is not None and self.text_rotation.text() != "" and self.text_scaling.text() != "" and self.text_tx.text() != "" and self.text_ty.text() != "":
+        # get the rotation degree from the line edit
+            rotation = float(self.text_rotation.text())
+            # get the scaling factor from the line edit
+            scaling = float(self.text_scaling.text())
+            # get the Tx from the line edit
+            tx = float(self.text_tx.text())
+            # get the Ty from the line edit
+            ty = float(self.text_ty.text())
+
+            angle_rad = np.radians(360-rotation)
+
+            angle_matrix = np.array([[np.cos(angle_rad), -np.sin(angle_rad), tx],
+                                        [np.sin(angle_rad), np.cos(angle_rad), ty],
+                                        [0, 0, 1]])
+            
+            scaling_matrix = np.array([[scaling, 0, 0],
+                                        [0, scaling, 0],
+                                        [0, 0, 1]])
+            
+            # multiply the angle matrix with scaling matrix
+            rotation_matrix = np.matmul(angle_matrix, scaling_matrix)
+            
+            affine_matrix = rotation_matrix[:2, :3]
+            result = cv2.warpAffine(self.img1, affine_matrix, (1920, 1080))
+
+            cv2.imshow("Transforms", result)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+        
+
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
