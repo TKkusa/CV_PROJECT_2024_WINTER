@@ -2,14 +2,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from PyQt5 import QtWidgets, QtGui, QtCore
-import warnings
 import sys
 import torch
 import torch.nn as nn
-from torchvision import models
+import torch.nn.functional as F
+from torchvision import models, transforms, datasets
 from torchsummary import summary
+from PIL import Image
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+transform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),  # Ensure the image is grayscale (1 channel)
+    transforms.Resize((32, 32)),  # Resize to match the model input
+    transforms.ToTensor(),  # Convert to tensor
+    transforms.Normalize((0.5,), (0.5,))  # Apply the same normalization as training
+])
+
+class VGG16_BN(nn.Module):
+    def __init__(self, num_classes = 10):
+        super(VGG16_BN, self).__init__()
+        self.vgg16 = models.vgg16_bn(pretrained=False)
+        self.vgg16.features[0] = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
+        self.vgg16.classifier[6] = nn.Linear(4096, num_classes)
+
+    def forward(self, x):
+        return self.vgg16(x)
 
 class UI_MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -19,6 +37,8 @@ class UI_MainWindow(QtWidgets.QMainWindow):
         self.initUI()
         self.img1 = None
         self.img2 = None
+        self.img1path = ""
+        self.img2path = ""
 
     def initUI(self):
         # button for load image 1
@@ -79,6 +99,8 @@ class UI_MainWindow(QtWidgets.QMainWindow):
 
     def loadImage1(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
+        self.img1path = fileName
+        print(fileName)
         if fileName:
             self.img1 = cv2.imread(fileName)
             print(f"Image1: {fileName} loaded successfully")
@@ -92,13 +114,46 @@ class UI_MainWindow(QtWidgets.QMainWindow):
             print(f"Image2: {fileName} loaded successfully")
 
     def ShowStructure01(self):
-        pass
+        model = VGG16_BN().to(device)
+        
+        model.load_state_dict(torch.load("vgg16_mnist.pth", map_location=device))
+        model.eval()
+
+        summary(model, (1, 32, 32))
+                              
 
     def ShowAccLoss(self):
-        pass
+        # show the training results png file
+        img = cv2.imread("training_results.png")
+        cv2.imshow("Training Results", img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
 
     def Predict(self):
-        pass
+        image = Image.open(self.img1path)
+        image = transform(image).unsqueeze(0).to(device)
+        
+        model = VGG16_BN().to(device)
+        model.load_state_dict(torch.load("vgg16_mnist.pth", map_location=device))
+        model.eval()
+
+        with torch.no_grad():  # Disable gradient calculation
+            outputs = model(image)
+            probabilities = F.softmax(outputs, dim=1)
+            predicted_class = torch.argmax(probabilities, dim=1)
+            # print the probabilities float of each class
+
+        probabilities = probabilities.cpu().squeeze().numpy()
+
+        # Plot the probabilities for all classes
+        plt.figure(figsize=(10, 5))
+        plt.bar(range(10), probabilities, color='skyblue')
+        plt.xlabel("Class")
+        plt.ylabel("Probability")
+        plt.title("Class Probability Distribution")
+        plt.xticks(range(10))  # Classes: 0-9
+        plt.show()
 
     def ShowImages(self):
         pass
@@ -112,9 +167,12 @@ class UI_MainWindow(QtWidgets.QMainWindow):
     def Inference(self):
         pass
     
-
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = UI_MainWindow()
     window.showMaximized()
     sys.exit(app.exec_())
+
+
+
+
