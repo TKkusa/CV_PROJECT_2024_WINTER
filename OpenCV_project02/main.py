@@ -116,7 +116,7 @@ class UI_MainWindow(QtWidgets.QMainWindow):
     def ShowStructure01(self):
         model = VGG16_BN().to(device)
         
-        model.load_state_dict(torch.load("vgg16_mnist.pth", map_location=device))
+        model.load_state_dict(torch.load("vgg16_mnist.pth", map_location=device, weights_only=True))
         model.eval()
 
         summary(model, (1, 32, 32))
@@ -135,7 +135,7 @@ class UI_MainWindow(QtWidgets.QMainWindow):
         image = transform(image).unsqueeze(0).to(device)
         
         model = VGG16_BN().to(device)
-        model.load_state_dict(torch.load("vgg16_mnist.pth", map_location=device))
+        model.load_state_dict(torch.load("vgg16_mnist.pth", map_location=device, Weights_only=True))
         model.eval()
 
         with torch.no_grad():  # Disable gradient calculation
